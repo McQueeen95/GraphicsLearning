@@ -17,7 +17,7 @@ public class BoatEventListener implements GLEventListener {
 	}
 
 	double firstBoatSpeed = 0;
-	double secondBoatSpeed = 0;
+//	double secondBoatSpeed = 0;
 	double thirdBoatSpeed = 0;
 
 	@Override
@@ -90,7 +90,6 @@ public class BoatEventListener implements GLEventListener {
 		draw3Shape(310, 350, 410, 350, 310, 530, gl);
 		//MainSail
 	}
-
 	public void colorIT(int r, int g, int b, GL gl) {
 		gl.glColor3f((float) r / 255, (float) g / 255, (float) b / 255); //(R,G,B)
 	}

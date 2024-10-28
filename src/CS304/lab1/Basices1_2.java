@@ -30,6 +30,7 @@ public class Basices1_2 extends JFrame {
         setSize(800, 500); // container size => the size of the window
         setLocationRelativeTo(this);
         setVisible(true);
+        setFocusable(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }

@@ -1,5 +1,4 @@
 package CS304.lab2.turtle;
-import CS304.lab1.SimpleGLEventListener;
 import com.sun.opengl.util.FPSAnimator;
 import javax.media.opengl.GLCanvas;
 import javax.swing.*;

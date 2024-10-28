@@ -25,9 +25,6 @@ int screenWidth = 600;
     gl.glOrtho(0.0, screenHeight, 0.0, screenWidth, -1.0, 1.0);
   }
 
-  double firstBoatSpeed = 0;
-  double secondBoatSpeed = 0;
-  double thirdBoatSpeed = 0;
 
 
 
@@ -45,7 +42,7 @@ int screenWidth = 600;
 //    gl.glRotated(0,0,0,1); // rotate the axis with 90 anti clockwise
 //    gl.glScaled(0.5,0.5,1);//(x,y,z) max = 1 , y = -1 to rotate it anti way
 
-   /* {
+    {
       gl.glBegin(GL.GL_POLYGON);
 
       gl.glColor3f(1.0f, 0.0f, 0.0f); //(R,G,B)
@@ -95,7 +92,12 @@ int screenWidth = 600;
       gl.glColor3f(0.0f, 1.0f, 1.0f); //(R,G,B)
       gl.glVertex2d(400, 100);
       gl.glEnd();
-    }*/
+    }
+    {
+      gl.glBegin(GL.GL_POINTS);
+      gl.glVertex2d(500, 500);
+      gl.glEnd();
+    }
 //    gl.glPopMatrix(); // get the saved Drawing
     //^ colored trinagle
 

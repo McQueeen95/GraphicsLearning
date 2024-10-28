@@ -44,79 +44,9 @@ public class TurtleEventListener implements GLEventListener{
         }
         //^Turtle
     }
-    public void drawBoat(GL gl){
-        colorIT(204, 126, 51, gl);
-        drawRectangle((int) (screenWidth * 0.25), (int) (screenHeight * 0.5), 300, 30, gl);
-        //Deck
-
-        colorIT(153,75,26,gl);
-        draw4Shape(170,270,420,270,450,300,150,300,gl);
-        //Hull
-
-        colorIT(102, 50, 0, gl);
-        drawRectangle(300, 330, 10, 200, gl);
-        //Mast
-
-        colorIT(255,255,255,gl);
-        draw3Shape(310,350,410,350,310,530,gl);
-        //MainSail
-    }
     public void colorIT(int r,int g,int b,GL gl){
         gl.glColor3f((float) r / 255, (float) g / 255, (float) b / 255); //(R,G,B)
     }
-    public void drawRectangle(int startX,int startY,int width,int height,GL gl){
-
-        gl.glBegin(GL.GL_POLYGON);
-
-        gl.glVertex2d(startX,startY);
-        gl.glVertex2d((width+startX),startY);
-
-        gl.glVertex2d((width+startX),startY);
-        gl.glVertex2d((width+startX),(height+startY));
-
-        gl.glVertex2d((width+startX),(height+startY));
-        gl.glVertex2d(startX,(height+startY));
-
-        gl.glVertex2d(startX,(height+startY));
-        gl.glVertex2d(startX,startY);
-
-        gl.glEnd();
-    }
-    public void draw3Shape(int x1,int y1,int x2,int y2,int x3,int y3,GL gl){
-
-        gl.glBegin(GL.GL_POLYGON);
-
-        gl.glVertex2d(x1, y1);
-        gl.glVertex2d(x2, y2);
-
-        gl.glVertex2d(x2, y2);
-        gl.glVertex2d(x3, y3);
-
-        gl.glVertex2d(x3, y3);
-        gl.glVertex2d(x1, y1);
-
-        gl.glEnd();
-    }
-    public void draw4Shape(int x1 , int y1 ,int x2, int y2, int x3,int y3,int x4,int y4,GL gl){
-
-        gl.glBegin(GL.GL_POLYGON);
-
-        gl.glVertex2d(x1,y1);
-        gl.glVertex2d(x2,y2);
-
-        gl.glVertex2d(x2,y2);
-        gl.glVertex2d(x3,y3);
-
-        gl.glVertex2d(x3,y3);
-        gl.glVertex2d(x4,y4);
-
-        gl.glVertex2d(x4,y4);
-        gl.glVertex2d(x1,y1);
-
-        gl.glEnd();
-
-    }
-
     public void drawCircle(double rad,int scaleX,int scaleY,GL gl){
 
         double ONE_DEGREE = (Math.PI / 180);
