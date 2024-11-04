@@ -1,8 +1,6 @@
 package CS304.lab3.BouncingCircle;
 
 import com.sun.opengl.util.FPSAnimator;
-
-
 import javax.media.opengl.GLCanvas;
 import javax.swing.*;
 import java.awt.*;

@@ -13,7 +13,7 @@ int screenWidth = 600;
 
     GL gl = glAutoDrawable.getGL();
 
-    gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // changing the color of the background(GLCanvas)
+    gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // changing the color of the background(GLCanvas)
 
 //    gl.glMatrixMode(GL.GL_PROJECTION);
     gl.glLoadIdentity();

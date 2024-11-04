@@ -28,8 +28,9 @@ public class BouncingEventListener implements GLEventListener {
 /*
     gl.glPushMatrix(); // saves the Drawing
     gl.glTranslated(0,200,0); // (x,y,x)moves 10 steps up
-    gl.glRotated(0,0,0,1); // rotate the axis with 90 anti clockwise
+    gl.glRotated(0,0,0,1); // rotate the axis with 90 anti-clockwise
     gl.glScaled(0.5,0.5,1);//(x,y,z) max = 1 , y = -1 to rotate it anti way
+    gl.glPopMatrix();a
 */
 
 		{
