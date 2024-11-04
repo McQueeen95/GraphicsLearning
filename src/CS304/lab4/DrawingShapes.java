@@ -1,7 +1,6 @@
 package CS304.lab4;
 
 import com.sun.opengl.util.FPSAnimator;
-import sun.security.rsa.RSAUtil;
 
 import javax.media.opengl.GLCanvas;
 import javax.swing.*;
