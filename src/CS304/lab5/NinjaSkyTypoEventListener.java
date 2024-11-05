@@ -254,6 +254,11 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
             xStar = xSoldier; // Initialize x position at soldier's position
             yStar = ySoldier + 10; // Set the star just above the soldier
         }
+        if((keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_Z) && !isStarFlying){
+            isStarFlying = true;
+            xStar = xSoldier; // Initialize x position at soldier's position
+            yStar = ySoldier + 10; // Set the star just above the soldier
+        }
     }
 
     @Override
