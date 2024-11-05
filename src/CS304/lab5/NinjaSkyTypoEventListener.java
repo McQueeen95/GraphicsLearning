@@ -10,7 +10,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Random;
 
 public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     float screenHeight = 200;
@@ -23,14 +22,17 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     int xLetter = 0 , yLetter = (int)screenHeight-10;
     int xStar = 0, yStar = 0;
     float starRotate = 0;
-    int animationIndex = 0;
-    int animationSpeed = 5; // Adjust for faster or slower animation (as num increase the anim slows)
-    int animationCounter = 0;
+    int animationIndex = 0, animationSpeed = 5,animationCounter = 0;
     int letterIndex = 0;
+    int healthBarIndex = 0,maxHealth = 100,currHealth = maxHealth;
+    float healthBarWidth = 100; // Set the width of the health bar
+    float healthBarHeight = 10; // Set the height of the health bar
+    float healthBarX = -70; // Position the health bar near the top-left
+    float healthBarY = 85; // Position vertically near the top
 
     String assetsFolderName = "CS304//Assets//Alphabet";
 
-    String[] textureNames = {"Man1.png","Man2.png","Man3.png","Man4.png","ninjaStar.png","Back.png"};
+    String[] textureNames = {"Man1.png","Man2.png","Man3.png","Man4.png","ninjaStar.png","HealthB.png","HealthA.png","Back.png"};
 
     String[] textureLettersNames = new String[26];
     public void fillLetters(){
@@ -70,6 +72,10 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
             DrawBackground(gl);
             handleKeyPress();
             DrawSprite(gl, xSoldier, ySoldier, textures, animationIndex, 0, 2); // draw the soldier
+//            DrawSprite(gl,-70,85,textures,healthBarIndex,0,1);// draw the health bar
+            float healthPercentage = currHealth / (float) maxHealth;
+//            System.out.println(healthPercentage);
+            drawHealthBar(gl,healthPercentage);
         }//^Soldier & back-ground
         {
             if (isStarFlying) {
@@ -85,11 +91,23 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
             double dist = sqrdDistance(xStar,yStar,xLetter,yLetter);
             double radii = Math.pow(0.5*0.1*yMax+0.5*0.1*yMax,2);
             boolean isCollided = dist<=radii;
-            if (yLetter < yMin + 10 || isCollided) {
-                xLetter = (int) (Math.random() * (screenWidth-10) + 1) - (int) xMax-5; // random falling letters positions
-                yLetter = (int) yMax; // always comes from the sky
-                letterIndex = (int) (Math.random() * 26); // picking random letter
-                isStarFlying = false;
+//            System.out.println("Distance: " + dist + " | Collision: " + isCollided);
+            if (isCollided ) {
+                // Collision happened
+//                System.out.println("Collision detected! Resetting letter and star.");
+                // Reset letter position and choose a new random letter
+                xLetter = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
+                yLetter = (int) yMax; // Reset to top of the screen
+                letterIndex = (int) (Math.random() * 26); // Pick a new random letter
+                isStarFlying = false; // Reset the star's state
+            } else if (yLetter < yMin + 10) {
+                // Letter missed by the ninja star, decrease health
+                currHealth = Math.max(0, currHealth - 10); // Decrease health by 10, but not below 0
+//                System.out.println("Letter missed! Decreasing health to " + currHealth);
+                // Reset letter position and choose a new random letter
+                xLetter = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
+                yLetter = (int) yMax; // Reset to top of the screen
+                letterIndex = (int) (Math.random() * 26); // Pick a new random letter
             }
         }//^Letters
     }
@@ -131,8 +149,29 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
 
         gl.glPushMatrix();
         gl.glTranslated( x/xMax, y/yMax, 0);
-        gl.glScaled(0.05*scale, 0.05*scale, 1);
+        gl.glScaled((0.05*scale), (0.05*scale), 1);
         gl.glRotated(rotate,0,0,1);
+        drawFullScreenQuad(gl);
+        gl.glPopMatrix();
+
+        gl.glDisable(GL.GL_BLEND);
+    }
+    public void drawHealthBar(GL gl,float healthPercentage) {
+        gl.glEnable(GL.GL_BLEND);
+
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[5]);	// Turn Blending On
+        gl.glPushMatrix();
+        gl.glTranslatef(healthBarX / xMax, healthBarY / yMax, 0);
+//        gl.glScalef(0.05f * (healthBarWidth / 100.0f), 0.05f * (healthBarHeight / 10.0f), 1); // Full size
+        gl.glScaled(0.2,0.02,1);
+        drawFullScreenQuad(gl);
+        gl.glPopMatrix();
+
+        // Draw the filled (red) health bar scaled to current health
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[6]); // HealthA (red bar texture)
+        gl.glPushMatrix();
+        gl.glTranslatef(healthBarX / xMax, healthBarY / yMax, 0);
+        gl.glScalef(0.2f * healthPercentage, 0.02f , 1); // Scaled by health
         drawFullScreenQuad(gl);
         gl.glPopMatrix();
 
