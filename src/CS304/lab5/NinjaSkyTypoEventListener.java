@@ -28,6 +28,7 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     float healthBarWidth = 100; // Set the width of the health bar
     float healthBarHeight = 10; // Set the height of the health bar
     float healthBarX = -70; // Position the health bar near the top-left
+    float redHealthBarX = -70;
     float healthBarY = 85; // Position vertically near the top
 
     String assetsFolderName = "CS304//Assets//Alphabet";
@@ -108,6 +109,7 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
                 xLetter = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
                 yLetter = (int) yMax; // Reset to top of the screen
                 letterIndex = (int) (Math.random() * 26); // Pick a new random letter
+                redHealthBarX -= 2;
             }
         }//^Letters
     }
@@ -162,7 +164,6 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
         gl.glBindTexture(GL.GL_TEXTURE_2D, textures[5]);	// Turn Blending On
         gl.glPushMatrix();
         gl.glTranslatef(healthBarX / xMax, healthBarY / yMax, 0);
-//        gl.glScalef(0.05f * (healthBarWidth / 100.0f), 0.05f * (healthBarHeight / 10.0f), 1); // Full size
         gl.glScaled(0.2,0.02,1);
         drawFullScreenQuad(gl);
         gl.glPopMatrix();
@@ -170,7 +171,7 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
         // Draw the filled (red) health bar scaled to current health
         gl.glBindTexture(GL.GL_TEXTURE_2D, textures[6]); // HealthA (red bar texture)
         gl.glPushMatrix();
-        gl.glTranslatef(healthBarX / xMax, healthBarY / yMax, 0);
+        gl.glTranslatef((redHealthBarX/ xMax), healthBarY / yMax, 0);
         gl.glScalef(0.2f * healthPercentage, 0.02f , 1); // Scaled by health
         drawFullScreenQuad(gl);
         gl.glPopMatrix();
