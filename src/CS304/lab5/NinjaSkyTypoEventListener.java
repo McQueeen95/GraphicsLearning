@@ -18,98 +18,159 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     float xMin = -(screenWidth / 2f);
     float yMax = screenHeight / 2f;
     float yMin = -(screenHeight / 2f);
-    int xSoldier = 0, ySoldier = 0;
-    int xLetter = 0 , yLetter = (int)screenHeight-10;
-    int xStar = 0, yStar = 0;
-    float starRotate = 0;
+    /////////////////////////////////////////////////      for screen
+    int xSoldier = 0, ySoldier = (int)yMin+10;
     int animationIndex = 0, animationSpeed = 5,animationCounter = 0;
+    //////////////////////////////////////////////////        ninja
+    int xLetter = 0 , yLetter = (int)yMax;
     int letterIndex = 0;
+    int movingLetterSpeed = 1;
+    /////////////////////////////////////////////////         letter
+    double xStar = 0, yStar = 0;
+    float starRotate = 0;
+    int movingStarSpeed = 1;
+    ///////////////////////////////////////////////////         star
     int healthBarIndex = 0,maxHealth = 100,currHealth = maxHealth;
     float healthBarWidth = 100; // Set the width of the health bar
     float healthBarHeight = 10; // Set the height of the health bar
-    float healthBarX = -70; // Position the health bar near the top-left
-    float redHealthBarX = -70;
+    float healthBarX = -60; // Position the health bar near the top-left
+    float redHealthBarX = -60;
     float healthBarY = 85; // Position vertically near the top
-
+    ////////////////////////////////////////////////////       health bar
     String assetsFolderName = "CS304//Assets//Alphabet";
-
     String[] textureNames = {"Man1.png","Man2.png","Man3.png","Man4.png","ninjaStar.png","HealthB.png","HealthA.png","Back.png"};
-
     String[] textureLettersNames = new String[26];
-    public void fillLetters(){
-        for (int i = 0; i < 26; i++) {
-            char letter = (char) ('a' + i);
-            textureLettersNames[i] = letter + ".png";
-        }
-    }
-
     TextureReader.Texture[] texture = new TextureReader.Texture[textureNames.length];
     TextureReader.Texture[] textureLetter = new TextureReader.Texture[textureLettersNames.length];
-
     int[] textures = new int[textureNames.length];
     int[] texturesLetters = new int[textureLettersNames.length];
+    /////////////////////////////////////////////////////////////////////textures
+    private double starVelocityX = 0;
+    private double starVelocityY = 0;
+    private final double STAR_SPEED = 3.0; // Adjust this value to change star speed
+    private final double LETTER_FALL_SPEED = 1.0; // This should match your movingLetterSpeed
+    private enum StarState { MOVING_HORIZONTAL, MOVING_VERTICAL, IDLE }
+    private StarState starState = StarState.IDLE;
+    private double targetX;
+    private final double HORIZONTAL_SPEED = 3.0; // Adjust this for horizontal movement speed
+    private final double VERTICAL_SPEED = 3.0;   // Adjust this for vertical movement speed
+    private final double CURVE_FACTOR = 200;     // Adjust this to change the curve intensity
+    private double initialX; // To track starting position for curve calculation
+    private final double CURVE_AMPLITUDE = 30.0; // Maximum curve deviation
+    private final double CURVE_FREQUENCY = 0.05; // How fast the curve oscillates
 
 
+    private void calculateStarTrajectory() {
+        // Set initial state and target
+        starState = StarState.MOVING_HORIZONTAL;
+        targetX = xLetter;
+
+        // Initialize position
+        xStar = xSoldier;
+        yStar = ySoldier;
+
+        // Initial horizontal velocity
+        if (xStar < targetX) {
+            starVelocityX = HORIZONTAL_SPEED;
+        } else {
+            starVelocityX = -HORIZONTAL_SPEED;
+        }
+        starVelocityY = 0; // Start with no vertical movement
+    }
+
+    private void updateStarMovement() {
+        if (!isStarFlying) return;
+
+        switch (starState) {
+            case MOVING_HORIZONTAL:
+                // Move horizontally until we're close to the target X
+                if (Math.abs(xStar - targetX) <= HORIZONTAL_SPEED) {
+                    // We've reached the target X, switch to vertical movement
+                    xStar = targetX; // Snap to exact position
+                    starState = StarState.MOVING_VERTICAL;
+                    starVelocityX = 0;
+                    starVelocityY = VERTICAL_SPEED;
+                }
+                break;
+
+            case MOVING_VERTICAL:
+                // Add slight curve based on distance from target
+                double distanceFromTarget = Math.abs(xStar - targetX);
+                if (distanceFromTarget > 0) {
+                    // Add slight horizontal movement for curve effect
+                    starVelocityX = (targetX - xStar) * CURVE_FACTOR;
+                }
+                break;
+
+            case IDLE:
+                // Do nothing
+                break;
+        }
+
+        // Update position
+        xStar += starVelocityX;
+        yStar += starVelocityY;
+
+        // Check if star is out of bounds
+        if (yStar > yMax - 10 || yStar < yMin + 10 ||
+                xStar > xMax - 5 || xStar < xMin + 5) {
+            isStarFlying = false;
+            starState = StarState.IDLE;
+        }
+    }
     @Override
     public void init(GLAutoDrawable glAutoDrawable) {
         fillLetters();
-
         GL gl = glAutoDrawable.getGL();
         gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         gl.glEnable(GL.GL_TEXTURE_2D);
         gl.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA);
         generateTextures(textureNames,texture,textures,gl);
         generateTextures(textureLettersNames,textureLetter,texturesLetters,gl);
-
     }
 
     @Override
     public void display(GLAutoDrawable glAutoDrawable) {
-        yLetter -= 1; // here the letter going down
+        yLetter -= movingLetterSpeed; // here the letter going down
         GL gl = glAutoDrawable.getGL();
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);
         gl.glLoadIdentity();
         {
             DrawBackground(gl);
             handleKeyPress();
-            DrawSprite(gl, xSoldier, ySoldier, textures, animationIndex, 0, 2); // draw the soldier
-//            DrawSprite(gl,-70,85,textures,healthBarIndex,0,1);// draw the health bar
+            DrawSprite(gl, xSoldier, ySoldier, textures, animationIndex, 0, 2,2); // draw the soldier
             float healthPercentage = currHealth / (float) maxHealth;
-//            System.out.println(healthPercentage);
-            drawHealthBar(gl,healthPercentage);
+            DrawSprite(gl,(int)healthBarX,(int)healthBarY,textures,5,0,6,0.6f);// draw the white health bar
+            DrawSprite(gl,(int)redHealthBarX,(int)healthBarY,textures,6,0,6*healthPercentage,0.6f);// draw the red health bar
         }//^Soldier & back-ground
         {
             if (isStarFlying) {
-                yStar += 1;
-                DrawSprite(gl, xStar, yStar, textures, 4, starRotate += 10, 5); // draw our star
-                if (yStar > yMax - 10) {
-                    isStarFlying = false;
-                }
+                // Update star position using velocity
+                updateStarMovement();
+                DrawSprite(gl, (int)xStar, (int)yStar, textures, 4, starRotate += 30, 5, 5);
+
             }
         }//^Ninja Star
         {
-            DrawSprite(gl, xLetter, yLetter, texturesLetters, letterIndex, 0, 1); // draw letters
-            double dist = sqrdDistance(xStar,yStar,xLetter,yLetter);
+            DrawSprite(gl, xLetter, yLetter, texturesLetters, letterIndex, 0, 1,1); // draw letters
+            double dist = sqrdDistance((int)xStar,(int)yStar,xLetter,yLetter);
             double radii = Math.pow(0.5*0.1*yMax+0.5*0.1*yMax,2);
             boolean isCollided = dist<=radii;
-//            System.out.println("Distance: " + dist + " | Collision: " + isCollided);
             if (isCollided ) {
-                // Collision happened
-//                System.out.println("Collision detected! Resetting letter and star.");
-                // Reset letter position and choose a new random letter
+                // Collision happened here bro
+                // Reset letter position and choose a new random letter with new random x
                 xLetter = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
                 yLetter = (int) yMax; // Reset to top of the screen
-                letterIndex = (int) (Math.random() * 26); // Pick a new random letter
+                letterIndex = (int) (Math.random() * texturesLetters.length); // Pick a new random letter
                 isStarFlying = false; // Reset the star's state
             } else if (yLetter < yMin + 10) {
                 // Letter missed by the ninja star, decrease health
                 currHealth = Math.max(0, currHealth - 10); // Decrease health by 10, but not below 0
-//                System.out.println("Letter missed! Decreasing health to " + currHealth);
-                // Reset letter position and choose a new random letter
+                // here we Reset letter position and choose a new random letter
                 xLetter = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
                 yLetter = (int) yMax; // Reset to top of the screen
-                letterIndex = (int) (Math.random() * 26); // Pick a new random letter
-                redHealthBarX -= 2;
+                letterIndex = (int) (Math.random() * texturesLetters.length); // Pick a new random letter
+                redHealthBarX -= 3;
             }
         }//^Letters
     }
@@ -117,6 +178,12 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     @Override
     public void reshape(GLAutoDrawable glAutoDrawable, int i, int i1, int i2, int i3) {
 
+    }
+    public void fillLetters(){
+        for (int i = 0; i < 26; i++) {
+            char letter = (char) ('a' + i);
+            textureLettersNames[i] = letter + ".png";
+        }
     }
     public double sqrdDistance(int x, int y, int x1, int y1){
         return Math.pow(x-x1,2)+Math.pow(y-y1,2);
@@ -145,34 +212,14 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
             }
         }
     }
-    public void DrawSprite(GL gl,int x, int y,int[] textures, int index,float rotate, float scale){
+    public void DrawSprite(GL gl,int x, int y,int[] textures, int index,float rotate, float scaleX, float scaleY){
         gl.glEnable(GL.GL_BLEND);
         gl.glBindTexture(GL.GL_TEXTURE_2D, textures[index]);	// Turn Blending On
 
         gl.glPushMatrix();
         gl.glTranslated( x/xMax, y/yMax, 0);
-        gl.glScaled((0.05*scale), (0.05*scale), 1);
+        gl.glScaled((0.05*scaleX), (0.05*scaleY), 1);
         gl.glRotated(rotate,0,0,1);
-        drawFullScreenQuad(gl);
-        gl.glPopMatrix();
-
-        gl.glDisable(GL.GL_BLEND);
-    }
-    public void drawHealthBar(GL gl,float healthPercentage) {
-        gl.glEnable(GL.GL_BLEND);
-
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[5]);	// Turn Blending On
-        gl.glPushMatrix();
-        gl.glTranslatef(healthBarX / xMax, healthBarY / yMax, 0);
-        gl.glScaled(0.2,0.02,1);
-        drawFullScreenQuad(gl);
-        gl.glPopMatrix();
-
-        // Draw the filled (red) health bar scaled to current health
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[6]); // HealthA (red bar texture)
-        gl.glPushMatrix();
-        gl.glTranslatef((redHealthBarX/ xMax), healthBarY / yMax, 0);
-        gl.glScalef(0.2f * healthPercentage, 0.02f , 1); // Scaled by health
         drawFullScreenQuad(gl);
         gl.glPopMatrix();
 
@@ -241,24 +288,21 @@ public class NinjaSkyTypoEventListener implements GLEventListener, KeyListener {
     public BitSet keyBits = new BitSet(256);
     @Override
     public void keyTyped(KeyEvent e) {
-
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
         keyBits.set(keyCode);
+        keyBits.set(e.getKeyChar());
+        if (e.getKeyChar() - 'a' == letterIndex && !isStarFlying) {
+            isStarFlying = true;
+            // Calculate trajectory and set initial position
+            calculateStarTrajectory();
+            xStar = xSoldier;
+            yStar = ySoldier + 10;
+        }
 
-        if (keyCode == KeyEvent.VK_SPACE && !isStarFlying) {
-            isStarFlying = true;
-            xStar = xSoldier; // Initialize x position at soldier's position
-            yStar = ySoldier + 10; // Set the star just above the soldier
-        }
-        if((keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_Z) && !isStarFlying){
-            isStarFlying = true;
-            xStar = xSoldier; // Initialize x position at soldier's position
-            yStar = ySoldier + 10; // Set the star just above the soldier
-        }
     }
 
     @Override
