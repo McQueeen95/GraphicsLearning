@@ -1,0 +1,373 @@
+package CS304.lab5.MonsterRush;
+
+import CS304.Texture.TextureReader;
+
+import javax.media.opengl.GL;
+import javax.media.opengl.GLAutoDrawable;
+import javax.media.opengl.GLEventListener;
+import javax.media.opengl.glu.GLU;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+
+public class MonsterRushEventListener implements GLEventListener, KeyListener {
+    // Screen dimensions
+    float screenHeight = 200;
+    float screenWidth = 200;
+    float xMax = screenWidth / 2f;
+    float xMin = -(screenWidth / 2f);
+    float yMax = screenHeight / 2f;
+    float yMin = -(screenHeight / 2f);
+
+    // Soldier properties
+    int xSoldier = 0, ySoldier = (int)yMin + 10;
+    int animationIndex = 0, animationSpeed = 5, animationCounter = 0;
+    Rectangle2D.Double soldierHitbox;
+
+    // Monster properties
+    int xMonster = 0, yMonster = (int)yMax;
+    int monsterIndex = 0;
+    int movingMonsterSpeed = 1;
+    Rectangle2D.Double monsterHitbox;
+
+    // Bullet properties
+    private final int MAX_BULLETS = 10;
+    private List<Point2D.Double> bulletPool;
+    private List<Boolean> bulletActive;
+    int movingBulletSpeed = 3;
+
+    // Health bar properties
+    int healthBarIndex = 0, maxHealth = 100, currHealth = maxHealth;
+    float healthBarWidth = 100;
+    float healthBarHeight = 10;
+    float healthBarX = -60;
+    float redHealthBarX = -60;
+    float healthBarY = 85;
+
+    // Texture properties
+    String assetsFolderName = "CS304//Assets//monsters";
+    String[] textureNames = {"Man1.png", "Man2.png", "Man3.png", "Man4.png", "bullet2.png", "HealthB.png", "HealthA.png", "Back.png"};
+    String[] textureMonstersNames = new String[40];
+    TextureReader.Texture[] texture = new TextureReader.Texture[textureNames.length];
+    TextureReader.Texture[] textureMonster = new TextureReader.Texture[textureMonstersNames.length];
+    int[] textures = new int[textureNames.length];
+    int[] texturesMonsters = new int[textureMonstersNames.length];
+
+    // Game state
+    private double lastFrameTime;
+    public BitSet keyBits = new BitSet(256);
+
+    public MonsterRushEventListener() {
+        initializePools();
+        initializeHitboxes();
+    }
+
+    private void initializePools() {
+        bulletPool = new ArrayList<>(MAX_BULLETS);
+        bulletActive = new ArrayList<>(MAX_BULLETS);
+        for (int i = 0; i < MAX_BULLETS; i++) {
+            bulletPool.add(new Point2D.Double());
+            bulletActive.add(false);
+        }
+    }
+
+    private void initializeHitboxes() {
+        soldierHitbox = new Rectangle2D.Double();
+        monsterHitbox = new Rectangle2D.Double();
+    }
+
+    @Override
+    public void init(GLAutoDrawable glAutoDrawable) {
+        try {
+            GL gl = glAutoDrawable.getGL();
+            gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            gl.glEnable(GL.GL_TEXTURE_2D);
+            gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+
+            if (!loadTextures(gl)) {
+                throw new RuntimeException("Failed to load textures");
+            }
+
+            lastFrameTime = System.nanoTime();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error initializing game: " + e.getMessage(),
+                    "Initialization Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
+    }
+
+    @Override
+    public void display(GLAutoDrawable glAutoDrawable) {
+        // Calculate delta time for smooth movement
+        double currentTime = System.nanoTime();
+        double deltaTime = (currentTime - lastFrameTime) / 1e9; // Convert to seconds
+        lastFrameTime = currentTime;
+
+        GL gl = glAutoDrawable.getGL();
+        gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+        gl.glLoadIdentity();
+
+        updateGame(deltaTime);
+        render(gl);
+        checkCollisions();
+    }
+
+    private void updateGame(double deltaTime) {
+        // Update monster position using delta time
+        yMonster -= movingMonsterSpeed * deltaTime * 60; // Scale for 60 FPS
+
+        // Update active bullets
+        for (int i = 0; i < bulletPool.size(); i++) {
+            if (bulletActive.get(i)) {
+                Point2D.Double bullet = bulletPool.get(i);
+                bullet.y += movingBulletSpeed * deltaTime * 60;
+
+                // Deactivate bullets that are off screen
+                if (bullet.y > yMax) {
+                    bulletActive.set(i, false);
+                }
+            }
+        }
+
+        updateHitboxes();
+        handleKeyPress();
+    }
+
+    private void render(GL gl) {
+        // Draw background
+        DrawBackground(gl);
+
+        // Draw soldier
+        DrawSprite(gl, xSoldier, ySoldier, textures, animationIndex, 0, 2, 2);
+
+        // Draw active bullets
+        for (int i = 0; i < bulletPool.size(); i++) {
+            if (bulletActive.get(i)) {
+                Point2D.Double bullet = bulletPool.get(i);
+                DrawSprite(gl, bullet.x, bullet.y, textures, 4, 0, 0.15f, 0.9f);
+            }
+        }
+
+        // Draw monster
+        DrawSprite(gl, xMonster, yMonster, texturesMonsters, monsterIndex, 0, 3, 3);
+
+        // Draw health bars
+        float healthPercentage = currHealth / (float) maxHealth;
+        DrawSprite(gl, (int)healthBarX, (int)healthBarY, textures, 5, 0, 6, 0.6f);
+        DrawSprite(gl, (int)redHealthBarX, (int)healthBarY, textures, 6, 0, 6*healthPercentage, 0.6f);
+    }
+
+    private void updateHitboxes() {
+        soldierHitbox.setRect(xSoldier - 5, ySoldier - 5, 10, 10);
+        monsterHitbox.setRect(xMonster - 7, yMonster - 7, 14, 14);
+    }
+
+    private void checkCollisions() {
+        // Check bullet collisions with monster
+        for (int i = 0; i < bulletPool.size(); i++) {
+            if (bulletActive.get(i)) {
+                Point2D.Double bullet = bulletPool.get(i);
+                if (monsterHitbox.contains(bullet.x, bullet.y)) {
+                    bulletActive.set(i, false);
+                    resetMonster();
+                }
+            }
+        }
+
+        // Check if monster reached bottom
+        if (yMonster < yMin + 10) {
+            handleMonsterReachedBottom();
+        }
+    }
+
+    private boolean loadTextures(GL gl) {
+        try {
+            fillMonsters();
+            if (textureNames == null || textureMonstersNames == null) {
+                return false;
+            }
+            generateTextures(textureNames, texture, textures, gl);
+            generateTextures(textureMonstersNames, textureMonster, texturesMonsters, gl);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void handleMonsterReachedBottom() {
+        currHealth = Math.max(0, currHealth - 10);
+        if (currHealth == 0) {
+            handleGameOver();
+        } else {
+            resetMonster();
+            redHealthBarX -= 3;
+        }
+    }
+
+    private void handleGameOver() {
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane.showMessageDialog(null, "Game Over! Final Score: " + getCurrentScore(),
+                    "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            System.exit(0);
+        });
+    }
+
+    private void resetMonster() {
+        xMonster = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
+        yMonster = (int) yMax;
+        monsterIndex = (int) (Math.random() * texturesMonsters.length);
+    }
+
+    private int getCurrentScore() {
+        return (maxHealth - currHealth) / 10;
+    }
+
+    public void handleKeyPress() {
+        boolean isMoving = false;
+        
+        if (isKeyPressed(KeyEvent.VK_LEFT)) {
+            if (xSoldier > xMin + 5) {
+                xSoldier -= 2;
+            }
+            isMoving = true;
+        }
+        if (isKeyPressed(KeyEvent.VK_RIGHT)) {
+            if (xSoldier < xMax - 5) {
+                xSoldier += 2;
+            }
+            isMoving = true;
+        }
+        if (isKeyPressed(KeyEvent.VK_DOWN)) {
+            if (ySoldier > yMin + 10) {
+                ySoldier -= 2;
+            }
+            isMoving = true;
+        }
+        if (isKeyPressed(KeyEvent.VK_UP)) {
+            if (ySoldier < yMax - 10) {
+                ySoldier += 2;
+            }
+            isMoving = true;
+        }
+
+        if (isMoving) {
+            animationCounter++;
+            if (animationCounter >= animationSpeed) {
+                animationIndex = (animationIndex + 1) % 4;
+                animationCounter = 0;
+            }
+        }
+    }
+
+    public void fillMonsters() {
+        for (int i = 0; i < textureMonstersNames.length; i++) {
+            textureMonstersNames[i] = i + 1 + ".png";
+        }
+    }
+
+    public void generateTextures(String[] textureNames, TextureReader.Texture[] texture, int[] textures, GL gl) {
+        gl.glGenTextures(textureNames.length, textures, 0);
+        for (int i = 0; i < textureNames.length; i++) {
+            try {
+                texture[i] = TextureReader.readTexture(assetsFolderName + "//" + textureNames[i], true);
+                gl.glBindTexture(GL.GL_TEXTURE_2D, textures[i]);
+                new GLU().gluBuild2DMipmaps(
+                        GL.GL_TEXTURE_2D,
+                        GL.GL_RGBA,
+                        texture[i].getWidth(), texture[i].getHeight(),
+                        GL.GL_RGBA,
+                        GL.GL_UNSIGNED_BYTE,
+                        texture[i].getPixels()
+                );
+            } catch (IOException e) {
+                System.out.println(e);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void DrawSprite(GL gl, double x, double y, int[] textures, int index, float rotate, float scaleX, float scaleY) {
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[index]);
+
+        gl.glPushMatrix();
+        gl.glTranslated(x/xMax, y/yMax, 0);
+        gl.glScaled(0.05*scaleX, 0.05*scaleY, 1);
+        gl.glRotated(rotate, 0, 0, 1);
+        drawFullScreenQuad(gl);
+        gl.glPopMatrix();
+
+        gl.glDisable(GL.GL_BLEND);
+    }
+
+    public void DrawBackground(GL gl) {
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textures.length-1]);
+        drawFullScreenQuad(gl);
+        gl.glDisable(GL.GL_BLEND);
+    }
+
+    public void drawFullScreenQuad(GL gl) {
+        gl.glBegin(GL.GL_QUADS);
+        gl.glTexCoord2f(0.0f, 0.0f);
+        gl.glVertex3f(-1.0f, -1.0f, -1.0f);
+
+        gl.glTexCoord2f(1.0f, 0.0f);
+        gl.glVertex3f(1.0f, -1.0f, -1.0f);
+
+        gl.glTexCoord2f(1.0f, 1.0f);
+        gl.glVertex3f(1.0f, 1.0f, -1.0f);
+
+        gl.glTexCoord2f(0.0f, 1.0f);
+        gl.glVertex3f(-1.0f, 1.0f, -1.0f);
+        gl.glEnd();
+    }
+
+    @Override
+    public void reshape(GLAutoDrawable glAutoDrawable, int i, int i1, int i2, int i3) {
+    }
+
+    @Override
+    public void displayChanged(GLAutoDrawable glAutoDrawable, boolean b, boolean b1) {
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        keyBits.set(keyCode);
+        
+        if (keyCode == KeyEvent.VK_SPACE) {
+            // Find inactive bullet in pool
+            for (int i = 0; i < bulletPool.size(); i++) {
+                if (!bulletActive.get(i)) {
+                    Point2D.Double bullet = bulletPool.get(i);
+                    bullet.x = xSoldier + 2;
+                    bullet.y = ySoldier + 8;
+                    bulletActive.set(i, true);
+                    break;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        keyBits.clear(e.getKeyCode());
+    }
+
+    public boolean isKeyPressed(int keyCode) {
+        return keyBits.get(keyCode);
+    }
+}
