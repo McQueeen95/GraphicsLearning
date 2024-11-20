@@ -1,10 +1,12 @@
 package CS304.lab5.MonsterRush;
 
 import CS304.Texture.TextureReader;
+import com.sun.opengl.util.GLUT;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
@@ -25,15 +27,22 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
     float yMax = screenHeight / 2f;
     float yMin = -(screenHeight / 2f);
     /////////////////////////////////////////////////      for screen
+    boolean gameRunning = false;
+    public void setGameRunning(boolean running){
+        this.gameRunning = running;
+    }
+    ///////////////////////////////////////////////// buttons
     int xSoldier = 0, ySoldier = (int)yMin+10;
     int animationIndex = 0, animationSpeed = 5,animationCounter = 0;
     //////////////////////////////////////////////////        solder
     int xMonster = 0 , yMonster = (int)yMax;
     int monsterIndex = 0;
     int movingMonsterSpeed = 1;
+    int score;
     /////////////////////////////////////////////////         Monster
     double xBullet = 0, yBullet = 0;
     int movingBulletSpeed = 3;
+    List<Bullet> bullets = new ArrayList<>();
     ///////////////////////////////////////////////////         Bullet
     int healthBarIndex = 0,maxHealth = 100,currHealth = maxHealth;
     float healthBarWidth = 100; // Set the width of the health bar
@@ -64,6 +73,9 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
 
     @Override
     public void display(GLAutoDrawable glAutoDrawable) {
+        if (!gameRunning) {
+            return;
+        }
         yMonster -= movingMonsterSpeed; // here the monster going down
         GL gl = glAutoDrawable.getGL();
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);
@@ -74,20 +86,12 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
             DrawSprite(gl, xSoldier, ySoldier, textures, animationIndex, 0, 2,2); // draw the soldier
         }//^Soldier & back-ground
         {
-            yBullet += movingBulletSpeed;
-            DrawSprite(gl, xBullet, yBullet, textures, 4, 0, 0.15f,0.9f); // draw our Bullet Dim -> 1 : 6
+            makeBulletsToHitMonsters(gl);
         }//^Soldier Bullet
         {
             DrawSprite(gl,xMonster,yMonster,texturesMonsters,monsterIndex,0,3,3);
             yMonster -= movingMonsterSpeed;
-            double dist = sqrdDistance((int) xBullet, (int) yBullet, xMonster, yMonster);
-            double radii = Math.pow(0.5 * 0.1 * yMax + 0.5 * 0.1 * yMax, 2);
-            boolean isCollided = dist <= radii;
-            if (isCollided) {
-                xMonster = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
-                yMonster = (int) yMax;
-                monsterIndex = (int) (Math.random() * texturesMonsters.length);
-            } else if (yMonster < yMin + 10) {
+            if (yMonster < yMin + 10) {
                 currHealth = Math.max(0, currHealth - 10); // Decrease health by 10, but not below 0
                 if (currHealth == 0) {
                     System.out.println("GameOver");
@@ -95,17 +99,19 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
                     System.exit(0);
                 }
                 // here we Reset monster position and choose a new random monster
-                xMonster = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
-                yMonster = (int) yMax; // Reset to top of the screen
-                monsterIndex = (int) (Math.random() * texturesMonsters.length); // Pick a new random monster
+                resetMonster();
                 redHealthBarX -= 3;
             }
+
         }//^Monsters
         {
             float healthPercentage = currHealth / (float) maxHealth;
             DrawSprite(gl,(int)healthBarX,(int)healthBarY,textures,5,0,6,0.6f);// draw the white health bar
             DrawSprite(gl,(int)redHealthBarX,(int)healthBarY,textures,6,0,6*healthPercentage,0.6f);// draw the red health bar
         }//^Health Bar
+        {
+            renderText(gl, "Score: " + score, 0.95f, 0.85f); // Display score in the top-left corner
+        }//^score
     }
 
     @Override
@@ -133,8 +139,9 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
         int keyCode = e.getKeyCode();
         keyBits.set(keyCode);
         if (keyCode == KeyEvent.VK_SPACE) {
-            xBullet = xSoldier + 2; // Initialize x position at soldier's position
-            yBullet = ySoldier + 8; // Set the star just above the soldier
+//            xBullet = xSoldier + 2; // Initialize x position at soldier's position
+//            yBullet = ySoldier + 8; // Set the star just above the soldier
+            bullets.add(new Bullet(xSoldier + 2, ySoldier + 8));
         }
     }
 
@@ -147,6 +154,39 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
         for (int i = 0; i < texturesMonsters.length; i++) {
             textureMonstersNames[i] = i+1 + ".png";
         }
+    }
+
+    public void makeBulletsToHitMonsters(GL gl) {
+        Iterator<Bullet> iterator = bullets.iterator();
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+            bullet.y += movingBulletSpeed;
+            DrawSprite(gl, bullet.x, bullet.y, textures, 4, 0, 0.15f,0.9f); // draw our Bullet Dim -> 1 : 6
+            double dist = sqrdDistance((int) bullet.x, (int) bullet.y, xMonster, yMonster);
+            double radii = Math.pow(0.5 * 0.1 * yMax + 0.5 * 0.1 * yMax, 2);
+            if (dist <= radii) {
+                resetMonster();
+                iterator.remove();
+                score++;
+                continue;
+            }
+
+            if (bullet.y > yMax) {
+                iterator.remove();
+            }
+        }
+    }
+
+    public void resetMonster() {
+        xMonster = (int) (Math.random() * (screenWidth - 10) + 1) - (int) xMax + 5;
+        yMonster = (int) yMax;
+        monsterIndex = (int) (Math.random() * texturesMonsters.length);
+    }
+
+    public void renderText(GL gl, String text, float x, float y) {
+        gl.glRasterPos2f(x/xMax + 0.7f,y/yMax +0.85f); // Set position for the text
+        System.out.println("hi");
+        new com.sun.opengl.util.GLUT().glutBitmapString(GLUT.BITMAP_HELVETICA_18,text);
     }
     public double sqrdDistance(int x, int y, int x1, int y1){
         return Math.pow(x-x1,2)+Math.pow(y-y1,2);
@@ -240,6 +280,13 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
                 animationIndex %= 4;
                 animationCounter = 0;
             }
+        }
+    }
+    class Bullet{
+        double x,y;
+        public Bullet(double x, double y) {
+            this.x = x;
+            this.y = y;
         }
     }
 }
