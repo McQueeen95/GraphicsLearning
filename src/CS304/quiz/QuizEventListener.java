@@ -64,9 +64,9 @@ public class QuizEventListener implements GLEventListener, KeyListener {
 		}//^back-ground
 		blinkingDot(gl,dotX,dotY);
 //		DrawSprite(gl, dotX+indexCursor*marginBetweenLetters, dotY, texturesLetters, 0, 0, 1f,1.588f);
-		DrawSprite(gl,xLetter,yLetter,texturesLetters,numberOfLetter,0, 1f,1.588f);
+//		DrawSprite(gl,xLetter,yLetter,texturesLetters,numberOfLetter,0, 1f,1.588f);
 //		handleKeyPress(gl);
-		writeLetters(gl,dotX ,dotY,2);
+//		writeLetters(gl,dotX ,dotY,2);
 	}
 
 	@Override

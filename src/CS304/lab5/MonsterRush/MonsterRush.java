@@ -42,7 +42,7 @@ public class MonsterRush extends JFrame{
             }
         });
 
-        animator = new FPSAnimator(glCanvas, 60);
+        animator = new FPSAnimator(glCanvas, 144);
         setSize(700, 700);
         setLocationRelativeTo(this);
         setVisible(true);

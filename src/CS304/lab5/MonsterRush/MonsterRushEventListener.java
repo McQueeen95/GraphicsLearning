@@ -76,7 +76,6 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
         if (!gameRunning) {
             return;
         }
-        yMonster -= movingMonsterSpeed; // here the monster going down
         GL gl = glAutoDrawable.getGL();
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);
         gl.glLoadIdentity();
@@ -90,7 +89,7 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
         }//^Soldier Bullet
         {
             DrawSprite(gl,xMonster,yMonster,texturesMonsters,monsterIndex,0,3,3);
-            yMonster -= movingMonsterSpeed;
+            yMonster -= movingMonsterSpeed; // here the monster going down
             if (yMonster < yMin + 10) {
                 currHealth = Math.max(0, currHealth - 10); // Decrease health by 10, but not below 0
                 if (currHealth == 0) {
@@ -148,7 +147,7 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
         int keyCode = e.getKeyCode();
-        keyBits.clear();
+        keyBits.clear(keyCode);
     }
     public void fillMonsters(){
         for (int i = 0; i < texturesMonsters.length; i++) {
@@ -185,7 +184,6 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
 
     public void renderText(GL gl, String text, float x, float y) {
         gl.glRasterPos2f(x/xMax + 0.7f,y/yMax +0.85f); // Set position for the text
-        System.out.println("hi");
         new com.sun.opengl.util.GLUT().glutBitmapString(GLUT.BITMAP_HELVETICA_18,text);
     }
     public double sqrdDistance(int x, int y, int x1, int y1){
@@ -251,25 +249,25 @@ public class MonsterRushEventListener implements GLEventListener,KeyListener {
         boolean flag = false;
         if (isKeyPressed(KeyEvent.VK_LEFT)) {
             if (xSoldier > xMin+5) {
-                xSoldier-=2;
+                xSoldier--;
             }
             flag = true;
         }
         if (isKeyPressed(KeyEvent.VK_RIGHT)) {
             if (xSoldier < xMax-5) {
-                xSoldier+=2;
+                xSoldier++;
             }
             flag = true;
         }
         if (isKeyPressed(KeyEvent.VK_DOWN)) {
             if (ySoldier > yMin+10) {
-                ySoldier-=2;
+                ySoldier--;
             }
             flag = true;
         }
         if (isKeyPressed(KeyEvent.VK_UP)) {
             if (ySoldier < yMax-10) {
-                ySoldier+=2;
+                ySoldier++;
             }
             flag = true;
         }
