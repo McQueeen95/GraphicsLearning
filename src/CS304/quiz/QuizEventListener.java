@@ -1,9 +1,7 @@
 package CS304.quiz;
 
+import CS304.TextPad.TextPadEventListener;
 import CS304.Texture.TextureReader;
-import CS304.lab4_2.KeyTypeEventListener;
-import CS304.lab5.MonsterRush.MonsterRushEventListener;
-
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
@@ -11,10 +9,7 @@ import javax.media.opengl.glu.GLU;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
 
 public class QuizEventListener implements GLEventListener, KeyListener {
 	float screenHeight = 200;
@@ -23,35 +18,29 @@ public class QuizEventListener implements GLEventListener, KeyListener {
 	float xMin = -(screenWidth / 2f);
 	float yMax = screenHeight / 2f;
 	float yMin = -(screenHeight / 2f);
+	int maxBorderX = (int)xMax - 8;
+	int minBorderX = (int)xMin + 10;
+	int maxBorderY = (int)yMax - 15;
+	int minBorderY = (int)yMin + 15;
 	/////////////////////////////////////////////////      for screen
 	String assetsFolderName = "CS304//Assets//Alphabet";
 	String[] textureNames = {"..png","Back1.png"};
-	String[] textureLettersNames = new String[26];
+	String[] textureOBJNames = new String[26];
 	TextureReader.Texture[] texture = new TextureReader.Texture[textureNames.length];
-	TextureReader.Texture[] textureLetter = new TextureReader.Texture[textureLettersNames.length];
+	TextureReader.Texture[] textureOBJ = new TextureReader.Texture[textureOBJNames.length];
 	int[] textures = new int[textureNames.length];
-	int[] texturesLetters = new int[textureLettersNames.length];
+	int[] texturesOBJ = new int[textureOBJNames.length];
 	/////////////////////////////////////////////////////////////////////textures
-	int blinking = 0;
-	int letterWidth = 17, letterHeight=27;
-	int marginBetweenLetters=10;
-	int dotX = (int)xMin + 10;
-	int dotY = (int)yMax - 15;
-	int indexCursor = 1;
-	List<Letter> letters = new ArrayList<>();
-	int xLetter,yLetter;
-	int numberOfLetter;
 
-	/////////////////////////////////////////////////////////////////////^letters
 	@Override
 	public void init(GLAutoDrawable glAutoDrawable) {
-		fillLetters();
+		fillOBJ();
 		GL gl = glAutoDrawable.getGL();
 		gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		gl.glEnable(GL.GL_TEXTURE_2D);
 		gl.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA);
 		generateTextures(textureNames,texture,textures,gl);
-		generateTextures(textureLettersNames,textureLetter,texturesLetters,gl);
+		generateTextures(textureOBJNames, textureOBJ, texturesOBJ,gl);
 	}
 	@Override
 	public void display(GLAutoDrawable glAutoDrawable) {
@@ -59,14 +48,9 @@ public class QuizEventListener implements GLEventListener, KeyListener {
 		GL gl = glAutoDrawable.getGL();
 		gl.glClear(GL.GL_COLOR_BUFFER_BIT);
 		gl.glLoadIdentity();
-		{
-			DrawBackground(gl);
-		}//^back-ground
-		blinkingDot(gl,dotX,dotY);
-//		DrawSprite(gl, dotX+indexCursor*marginBetweenLetters, dotY, texturesLetters, 0, 0, 1f,1.588f);
-//		DrawSprite(gl,xLetter,yLetter,texturesLetters,numberOfLetter,0, 1f,1.588f);
-//		handleKeyPress(gl);
-//		writeLetters(gl,dotX ,dotY,2);
+		DrawBackground(gl);
+
+
 	}
 
 	@Override
@@ -76,58 +60,37 @@ public class QuizEventListener implements GLEventListener, KeyListener {
 	public void displayChanged(GLAutoDrawable glAutoDrawable, boolean b, boolean b1) {
 
 	}
-	public void fillLetters(){
+	public void fillOBJ(){
 		for (int i = 0; i < 26; i++) {
 			char letter = (char) ('a' + i);
-			textureLettersNames[i] = letter + ".png";
+			textureOBJNames[i] = letter + ".png";
 		}
 	}
-	public void blinkingDot(GL gl,double x , double y){
-		if (blinking >=10 && blinking < 20) {
-			DrawSprite(gl,x,y,textures,0,0,1f,1.588f);
-			blinking++;
-		} else if (blinking == 20) {
-			blinking = 0;
-		}else {
-			blinking++;
-		}
-	}
-	public void writeLetters(GL gl, double x, double y,int numberIndex) {
-//		Iterator<QuizEventListener.Letter> iterator = letters.iterator();
-//		while (iterator.hasNext()) {
-//			QuizEventListener.Letter letter = iterator.next();
-//			letter.x += 20;
-//			if(letter.y == screenWidth){
-//				letter.y += 30;
-//			}
-		DrawSprite(gl, dotX, dotY, texturesLetters, numberIndex, 0, 1f,1.588f);
 
-//		indexCursor++;
-//		}
-	}
+
 	public BitSet keyBits = new BitSet(256);
 	public boolean isKeyPressed(int keyCode) {
 		return keyBits.get(keyCode);
 	}
-	public void handleKeyPress(GL gl){
-		if (isKeyPressed(KeyEvent.VK_A)) {
-			dotX = dotX+indexCursor*marginBetweenLetters;
-			indexCursor++;
-			writeLetters(gl,dotX ,dotY,2);
-		}
-	}
+
 	@Override
 	public void keyTyped(KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		keyBits.set(keyCode);
-		keyBits.set(e.getKeyChar());
-		if ((e.getKeyChar() - 'a' == 0 )) {
-//			letters.add(new Letter(dotX+20,dotY+30,e.getKeyChar() - 'a'));
-//			writeLetters(gl,dotX ,dotY,2);
-		}
+
+
 	}
 	@Override
 	public void keyPressed(KeyEvent e) {
+		int typedChar = e.getKeyChar();
+		keyBits.set(typedChar);
+		if (typedChar <= 'z' && typedChar >= 'a') {
+			//
+		}
+
+		int keyCode = e.getKeyCode();
+		keyBits.set(keyCode);
+		if (keyCode == KeyEvent.VK_SPACE) {
+			//
+		}
 	}
 	@Override
 	public void keyReleased(KeyEvent e) {
@@ -190,16 +153,5 @@ public class QuizEventListener implements GLEventListener, KeyListener {
 		gl.glVertex3f(-1.0f, 1.0f, -1.0f); // Top-left corner
 		gl.glEnd();
 	}
-	class Letter{
-		double x,y;
-		int letterNumber;
-		public Letter(double x, double y, int letterNumber) {
-			this.x = x;
-			this.y = y;
-			this.letterNumber = letterNumber;
-		}
-		public void drawLetter(GL gl) {
-//				writeLetters(gl,dotX+20,dotY+20);
-		}
-	}
+
 }
